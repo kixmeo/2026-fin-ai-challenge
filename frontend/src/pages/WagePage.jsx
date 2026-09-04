@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ClipboardList, Trash2, Plus } from "lucide-react";
+import { ClipboardList, Trash2, Plus, AlertTriangle } from "lucide-react";
 import { C } from "../lib/theme.js";
 import { Card, Field, Btn, Badge } from "../components/ui/Primitives.jsx";
 import { won } from "../lib/format.js";
@@ -26,7 +26,7 @@ function WagePage() {
   const setDeduction = (i, key, val) => { const next = [...form.deductions]; next[i] = { ...next[i], [key]: val }; setForm({ ...form, deductions: next }); };
   const addDeduction = () => setForm({ ...form, deductions: [...form.deductions, { name: "", amount: "" }] });
   const removeDeduction = (i) => setForm({ ...form, deductions: form.deductions.filter((_, idx) => idx !== i) });
-  const submit = async () => { setLoading(true); const res = await api.postWageCheck(form); setResult(res); setResultKey((k) => k + 1); setLoading(false); };
+  const submit = async () => { setLoading(true); const res = await mockApi.postWageCheck(form); setResult(res); setResultKey((k) => k + 1); setLoading(false); };
 
   return (
     <div className="grid-wage">
@@ -66,6 +66,7 @@ function WagePage() {
                 <Badge level={result.minimum_wage_check.pass ? "정당" : "의심"} />
               </div>
               <p style={{ fontSize: 13.5, color: C.textSub, marginTop: 12, lineHeight: 1.7 }}>시급 {won(Math.round(hourly))}<br />2026년 최저시급 {won(result.minimum_wage_check.minimum_wage_2026)}</p>
+              <p style={{ fontSize: 12.5, color: result.minimum_wage_check.pass ? C.textMute : C.danger, marginTop: 8, lineHeight: 1.6 }}>{result.minimum_wage_check.reason}</p>
             </Card>
             <Card className="liftable">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -73,6 +74,7 @@ function WagePage() {
                 <Badge level={result.overtime_check.pass ? "정당" : "의심"} />
               </div>
               <p style={{ fontSize: 13.5, color: C.textSub, marginTop: 12, lineHeight: 1.7 }}>예상 {won(Math.round(expected))}<br />실지급 {won(Math.round(actual))}</p>
+              <p style={{ fontSize: 12.5, color: result.overtime_check.pass ? C.textMute : C.danger, marginTop: 8, lineHeight: 1.6 }}>{result.overtime_check.reason}</p>
             </Card>
           </div>
 
@@ -90,7 +92,13 @@ function WagePage() {
             ))}
           </div>
 
-          <div style={{ background: C.surface, borderRadius: 14, padding: 16, marginTop: 18, fontSize: 12.5, color: C.textMute, lineHeight: 1.7 }}>{result.disclaimer}</div>
+          {result.has_suspicious && (
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-start", background: C.dangerBg, border: `1px solid ${C.danger}33`, borderRadius: 14, padding: 16, marginTop: 18 }}>
+              <AlertTriangle size={20} color={C.danger} style={{ flexShrink: 0, marginTop: 1 }} />
+              <p style={{ fontSize: 13.5, color: C.danger, lineHeight: 1.7, margin: 0, fontWeight: 600 }}>{result.consultation_notice}</p>
+            </div>
+          )}
+          <div style={{ background: C.surface, borderRadius: 14, padding: 16, marginTop: 12, fontSize: 12.5, color: C.textMute, lineHeight: 1.7 }}>{result.disclaimer}</div>
           <div style={{ marginTop: 16 }}>
             <Btn variant="secondary" onClick={() => setResult(null)} style={{ width: "auto", padding: "12px 22px" }}>다시 진단하기</Btn>
           </div>

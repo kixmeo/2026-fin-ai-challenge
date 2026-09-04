@@ -12,6 +12,8 @@ import WagePage from "./pages/WagePage.jsx";
 import ExchangePage from "./pages/ExchangePage.jsx";
 import FeesPage from "./pages/FeesPage.jsx";
 import CalendarPage from "./pages/CalendarPage.jsx";
+import NotificationsPage from "./pages/NotificationsPage.jsx";
+import ProfilePage from "./pages/ProfilePage.jsx";
 import { api } from "./api/client.js";
 import { supabase } from "./lib/supabase.js";
 
@@ -28,6 +30,7 @@ export default function App() {
   const [chatSessionId, setChatSessionId] = useState(null);
   const [events, setEvents] = useState([]);
   const [toast, setToast] = useState(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
 
   const loadCalendar = async () => {
@@ -112,7 +115,7 @@ export default function App() {
   if (screen === "onboarding") return <PageWrap><OnboardingPage onSubmit={handleBasicProfile} loading={loading} /></PageWrap>;
 
   const headers = {
-    home: { title: `안녕하세요, ${profile.name || "회원"}님`, subtitle: "오늘도 모아모아가 도와드릴게요" },
+    home: { title: `안녕하세요, ${profile.name || "회원"}님`, subtitle: "오늘도 MOAMOA가 도와드릴게요" },
     benefits: { title: "혜택 찾기", subtitle: "나에게 맞는 지원금을 찾아드려요" },
     chat: { title: "혜택 찾기", subtitle: "몇 가지만 답하면 맞춤 혜택을 찾아드려요" },
     benefitDetail: { title: selectedBenefit ? selectedBenefit.title : "혜택 상세", subtitle: "자세한 내용을 확인하고 궁금한 점을 물어보세요" },
@@ -120,6 +123,8 @@ export default function App() {
     exchange: { title: "환율 인사이트", subtitle: "지금이 송금하기 좋은 타이밍인지 알려드려요" },
     fees: { title: "송금 수수료 비교", subtitle: "채널별 수수료와 소요 시간을 비교해요" },
     calendar: { title: "캘린더", subtitle: "신청 마감일을 놓치지 않도록 관리해요" },
+    notifications: { title: "알림", subtitle: "다가오는 마감일을 한눈에 확인해요" },
+    profile: { title: "프로필", subtitle: "내 정보를 확인해요" },
   };
   const sectionFor = { chat: "benefits", benefitDetail: "benefits" };
   const activeSection = sectionFor[screen] || screen;
@@ -140,15 +145,17 @@ export default function App() {
   else if (screen === "exchange") page = <ExchangePage />;
   else if (screen === "fees") page = <FeesPage />;
   else if (screen === "calendar") page = <CalendarPage events={events} onAdd={handleManualAddEvent} onDelete={handleDeleteEvent} />;
+  else if (screen === "notifications") page = <NotificationsPage events={events} />;
+  else if (screen === "profile") page = <ProfilePage profile={profile} />;
 
   const h = headers[screen] || {};
 
   return (
     <PageWrap>
       <div style={{ display: "flex", minHeight: "100vh" }}>
-        <Sidebar active={activeSection} onNavigate={goTab} profile={profile} onLogout={handleLogout} />
+        <Sidebar active={activeSection} onNavigate={goTab} profile={profile} onLogout={handleLogout} hasNotifications={events.length > 0} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed((c) => !c)} />
         <div key={screen} className="page-enter" style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-          <TopHeader title={h.title} subtitle={h.subtitle} />
+          {screen !== "home" && <TopHeader title={h.title} subtitle={h.subtitle} />}
           <div style={{ flex: 1, overflowY: "auto" }}>
             <div style={{ maxWidth: 1120, margin: "0 auto", padding: "36px 44px" }}>{page}</div>
           </div>

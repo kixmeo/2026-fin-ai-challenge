@@ -1,4 +1,5 @@
 import { C } from "../lib/theme.js";
+
 function PageWrap({ children }) {
   return (
     <div style={{ minHeight: "100vh", background: C.surfaceDeep, color: C.text, fontFamily: "'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif" }}>
@@ -25,7 +26,7 @@ function PageWrap({ children }) {
         .liftable:hover { transform: translateY(-7px) scale(1.014); box-shadow: 0 22px 40px rgba(20,24,32,0.11); border-color: ${C.primaryLight}; }
 
         .btn-pop { transition: transform .25s cubic-bezier(0.34,1.56,0.64,1), box-shadow .25s ease; }
-        .btn-pop:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(49,130,246,0.28); }
+        .btn-pop:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(26,80,255,0.28); }
         .btn-pop:active { transform: translateY(-1px) scale(0.97); }
 
         .blob { position: absolute; border-radius: 50%; filter: blur(48px); pointer-events: none; }
