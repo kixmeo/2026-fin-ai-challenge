@@ -70,8 +70,10 @@ export async function postWageCheck(form) {
   const monthlyHours = Number(form.work_hours_per_week) * 4;
   const hourly_wage = Math.round(Number(form.base_wage) / monthlyHours);
   const minimum_wage_2026 = 10320;
+  const minWagePass = hourly_wage >= minimum_wage_2026;
   const expected = Math.round(hourly_wage * 1.5 * Number(form.overtime_hours || 0));
   const actual = Number(form.overtime_pay || 0);
+  const overtimePass = actual >= expected * 0.95;
   const positiveKeywords = ["국민연금", "건강보험", "고용보험", "산재보험", "소득세", "지방소득세"];
   const cautionKeywords = ["숙식비", "기숙사비", "식비", "관리비", "교통비"];
   const deduction_flags = form.deductions
@@ -82,11 +84,24 @@ export async function postWageCheck(form) {
       if (cautionKeywords.some((k) => name.includes(k))) return { name, amount: Number(d.amount), level: "주의", reason: "상한 규정이 있는 항목이에요. 금액이 과도하지 않은지 확인이 필요해요." };
       return { name, amount: Number(d.amount), level: "의심", reason: "근로기준법상 임의 공제가 제한되는 항목과 패턴이 비슷해요." };
     });
+  const has_suspicious = !minWagePass || !overtimePass || deduction_flags.some((d) => d.level === "의심");
   return {
-    minimum_wage_check: { pass: hourly_wage >= minimum_wage_2026, hourly_wage, minimum_wage_2026 },
-    overtime_check: { pass: actual >= expected * 0.95, expected, actual },
+    minimum_wage_check: {
+      pass: minWagePass,
+      hourly_wage,
+      minimum_wage_2026,
+      reason: minWagePass ? "2026년 최저시급 기준을 충족하고 있어요." : "계산된 시급이 2026년 최저시급보다 낮아요. 최저임금법 위반 소지가 있어요.",
+    },
+    overtime_check: {
+      pass: overtimePass,
+      expected,
+      actual,
+      reason: overtimePass ? "근로기준법상 가산수당(1.5배) 기준을 충족하고 있어요." : "연장근로 가산수당(통상임금의 1.5배)보다 실지급액이 적어요.",
+    },
     deduction_flags,
-    disclaimer: "본 결과는 참고용이며 법적 효력이 없습니다. 확인이 필요하면 고용노동부 상담(1350)을 이용하세요.",
+    has_suspicious,
+    disclaimer: "본 진단 결과는 참고용이며 법적 효력이 없습니다.",
+    consultation_notice: "의심되는 항목이 있어요. 정확한 판단은 고용노동부 상담센터(국번없이 1350)에서 받아보실 수 있어요.",
   };
 }
 
@@ -112,9 +127,10 @@ export async function getFees(amount, currency) {
   const base = amount / 1000000;
   return {
     channels: [
-      { name: "A은행 전신송금", fee: Math.round(15000 * base), eta_hours: 24 },
-      { name: "B 핀테크 송금", fee: Math.round(4500 * base), eta_hours: 2 },
-      { name: "C 간편송금", fee: Math.round(6200 * base), eta_hours: 1 },
+      { name: "하나은행", fee: Math.round(9000 * base), eta_hours: 18 },
+      { name: "신한은행", fee: Math.round(11500 * base), eta_hours: 20 },
+      { name: "우리은행", fee: Math.round(9800 * base), eta_hours: 16 },
+      { name: "KB국민은행", fee: Math.round(13000 * base), eta_hours: 24 },
     ].sort((a, b) => a.fee - b.fee),
   };
 }

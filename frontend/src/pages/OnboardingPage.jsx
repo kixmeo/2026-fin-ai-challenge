@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
 import { C, labelStyle } from "../lib/theme.js";
+import Logo from "../components/Logo.jsx";
 import { Btn } from "../components/ui/Primitives.jsx";
 
 function OnboardingPage({ onSubmit, loading }) {
@@ -12,9 +12,7 @@ function OnboardingPage({ onSubmit, loading }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, background: C.surfaceDeep }}>
       <div className="pop-in" style={{ width: "100%", maxWidth: 480, background: "#fff", borderRadius: 26, border: `1px solid ${C.border}`, padding: 44 }}>
-        <div style={{ width: 48, height: 48, borderRadius: 14, background: C.primary, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
-          <Sparkles size={24} color="#fff" />
-        </div>
+        <Logo size={48} style={{ marginBottom: 20 }} />
         <h2 style={{ fontSize: 26, fontWeight: 800, color: C.text, margin: "0 0 7px", letterSpacing: "-0.02em" }}>기본 정보 입력</h2>
         <p style={{ color: C.textMute, fontSize: 14.5, margin: "0 0 30px" }}>가입 후 딱 한 번만 입력해요. 혜택 매칭에 사용돼요.</p>
 

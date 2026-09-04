@@ -12,11 +12,7 @@ function HomePage({ profile, onOpen }) {
   ];
   return (
     <div>
-      <div className="pop-in" style={{ position: "relative", overflow: "hidden", background: `linear-gradient(120deg, ${C.primary}, ${C.primaryDark})`, borderRadius: 32, padding: "54px 50px", color: "#fff", marginBottom: 34, minHeight: 210 }}>
-        <div className="blob" style={{ width: 260, height: 260, background: C.violet, opacity: 0.55, top: -70, right: 30, animation: "blobFloat 14s ease-in-out infinite" }} />
-        <div className="blob" style={{ width: 220, height: 220, background: C.cyan, opacity: 0.45, bottom: -90, right: 170, animation: "blobFloat 18s ease-in-out infinite reverse" }} />
-        <div className="blob" style={{ width: 180, height: 180, background: "#fff", opacity: 0.18, top: 10, left: -50, animation: "blobFloat 16s ease-in-out infinite" }} />
-
+      <div className="pop-in" style={{ position: "relative", background: C.primary, borderRadius: 32, padding: "54px 50px", color: "#fff", marginBottom: 34, minHeight: 210 }}>
         <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, opacity: 0.9, marginBottom: 16 }}>

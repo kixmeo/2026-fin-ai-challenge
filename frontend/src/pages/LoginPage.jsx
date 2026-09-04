@@ -1,24 +1,19 @@
-import { CheckCircle2, Sparkles, ChevronRight } from "lucide-react";
+import { CheckCircle2, ChevronRight } from "lucide-react";
 import { C } from "../lib/theme.js";
+import Logo from "../components/Logo.jsx";
 
 function LoginPage({ onLogin, loading }) {
-  const features = ["혜택 매칭부터 임금 진단까지 한 곳에서", "AI가 어려운 서류·용어를 대신 정리", "마감일은 캘린더가 알아서 챙겨드려요"];
+  const features = ["혜택 매칭부터 임금 진단까지 한 곳에서", "AI가 어려운 서류·용어를 대신 정리", "마감일은 캘린더에 등록하고 알림받기"];
   return (
     <div style={{ height: "100vh", overflowY: "auto", scrollSnapType: "y mandatory" }}>
-      <div style={{ height: "100vh", scrollSnapAlign: "start", position: "relative", overflow: "hidden", background: `linear-gradient(155deg, ${C.primary}, ${C.primaryDark})`, color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}>
-        <div className="blob" style={{ width: 320, height: 320, background: C.violet, opacity: 0.5, top: -100, right: -60, animation: "blobFloat 16s ease-in-out infinite" }} />
-        <div className="blob" style={{ width: 240, height: 240, background: C.cyan, opacity: 0.4, bottom: -60, left: -40, animation: "blobFloat 20s ease-in-out infinite reverse" }} />
-
-        <div className="pop-in" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 380, display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 22 }}>
-            <Sparkles size={28} />
-          </div>
-          <h1 style={{ fontSize: 56, fontWeight: 800, letterSpacing: "-0.03em", margin: "0 0 16px", lineHeight: 1 }}>모아모아</h1>
-          <p style={{ fontSize: 19, fontWeight: 700, opacity: 0.95, margin: "0 0 10px", lineHeight: 1.4 }}>한국살이, 모아모아가 챙겨드릴게요</p>
-          <p style={{ fontSize: 14.5, opacity: 0.78, margin: 0 }}>외국인 근로자를 위한 금융 비서</p>
+      <div style={{ height: "100vh", scrollSnapAlign: "start", position: "relative", background: C.primary, color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}>
+        <div className="pop-in" style={{ position: "relative", zIndex: 1, width: "100%", maxWidth: 460, display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <Logo size={88} bg="#fff" style={{ marginBottom: 12 }} />
+          <h1 style={{ fontSize: 80, fontWeight: 800, letterSpacing: "-0.03em", margin: "0 0 20px", lineHeight: 1 }}>MOAMOA</h1>
+          <p style={{ fontSize: 18, fontWeight: 500, opacity: 0.85, margin: 0 }}>외국인 근로자를 위한 금융 비서</p>
         </div>
 
-        <div className="floaty" style={{ position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)", opacity: 0.7 }}>
+        <div className="floaty" style={{ position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)", opacity: 0.8 }}>
           <ChevronRight size={22} style={{ transform: "rotate(90deg)" }} />
         </div>
       </div>
