@@ -5,26 +5,66 @@ import { won } from "../lib/format.js";
 import { useCountUp } from "../lib/useCountUp.js";
 import { api } from "../api/client.js";
 
+// 실시간 환율(F5) 붙기 전까지 쓰는 고정 환율 추정치 — 백엔드 FeesController.USD_TO_KRW_RATE와 동일하게 맞춤
+const USD_TO_KRW_RATE = 1400;
+const REPORTING_THRESHOLD_USD = 5000;
+
 function FeesPage() {
   const [amount, setAmount] = useState("1000000");
-  const [currency, setCurrency] = useState("PHP");
   const [result, setResult] = useState(null);
+  const [notice, setNotice] = useState(null);
   const [loading, setLoading] = useState(false);
-  const search = async () => { setLoading(true); const res = await api.getFees(Number(amount), currency); setResult(res); setLoading(false); };
+  const search = async () => {
+    const n = Number(amount);
+    if (!Number.isInteger(n) || n <= 0) {
+      setResult(null);
+      setNotice("보낼 금액을 올바르게 입력해 주세요.");
+      return;
+    }
+    const usdEquivalent = n / USD_TO_KRW_RATE;
+    if (usdEquivalent > REPORTING_THRESHOLD_USD) {
+      setResult(null);
+      setNotice("송금 합계가 미화 5,000불을 초과하면 외국환거래규정에 따라 신고 또는 보고 의무가 발생할 수 있어요. 이 경우 수수료 비교 대신 은행 창구에서 별도로 확인해 주세요.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await api.getFees(n);
+      if (res.channels.length === 0) {
+        setResult(null);
+        setNotice("입력하신 금액으로는 수수료(전신료 포함)가 보내는 금액보다 커서 비교할 채널이 없어요. 더 큰 금액을 입력해 주세요.");
+      } else {
+        setNotice(null);
+        setResult(res);
+      }
+    } catch (err) {
+      console.error("[FeesPage] getFees failed:", err);
+      setResult(null);
+      setNotice("수수료 비교 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => { search(); /* eslint-disable-next-line */ }, []);
 
   return (
     <div>
+      <p style={{ color: C.textMute, fontSize: 13, marginTop: -10, marginBottom: 18 }}>
+        생활비 송금 기준 비교예요. 고액 송금은 은행별 별도 절차가 있을 수 있어요.
+      </p>
       <div style={{ display: "flex", gap: 10, marginBottom: 22, flexWrap: "wrap" }}>
-        <input value={amount} onChange={(e) => setAmount(e.target.value)} style={{ width: 210, padding: "12px 15px", borderRadius: 11, border: `1px solid ${C.border}`, fontSize: 15, outline: "none" }} />
-        <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={{ padding: "12px 13px", borderRadius: 11, border: `1px solid ${C.border}`, fontSize: 15, outline: "none", background: "#fff" }}>
-          <option value="PHP">PHP</option><option value="VND">VND</option><option value="USD">USD</option><option value="THB">THB</option>
-        </select>
+        <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="보낼 금액 (원)" style={{ width: 210, padding: "12px 15px", borderRadius: 11, border: `1px solid ${C.border}`, fontSize: 15, outline: "none" }} />
         <Btn onClick={search} style={{ width: "auto", padding: "12px 24px" }} disabled={loading}>{loading ? "비교 중..." : "비교하기"}</Btn>
       </div>
 
+      {notice && (
+        <div style={{ background: C.warningBg, border: `1px solid ${C.warning}`, borderRadius: 16, padding: "16px 18px", color: C.text, fontSize: 14, lineHeight: 1.6 }}>
+          {notice}
+        </div>
+      )}
+
       {result && (
-        <div key={currency + amount} className="pop-in" style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 20, overflowX: "auto" }}>
+        <div key={amount} className="pop-in" style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 20, overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 500 }}>
             <thead>
               <tr style={{ background: C.surfaceDeep }}>

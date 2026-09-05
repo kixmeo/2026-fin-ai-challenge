@@ -96,14 +96,24 @@ export default function App() {
   };
 
   const handleManualAddEvent = async (title, date) => {
-    await api.postCalendarEvent(title, date);
-    setEvents((prev) => [...prev, { id: "evt_" + Date.now(), title, date }]);
-    showToast("일정을 추가했어요");
+    try {
+      const res = await api.postCalendarEvent(title, date);
+      setEvents((prev) => [...prev, { id: res.calendar_event_id, title, date }]);
+      showToast("일정을 추가했어요");
+    } catch (err) {
+      console.error("[App] postCalendarEvent failed:", err);
+      showToast("일정 추가에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    }
   };
 
   const handleDeleteEvent = async (id) => {
-    await api.deleteCalendarEvent(id);
-    setEvents((prev) => prev.filter((e) => e.id !== id));
+    try {
+      await api.deleteCalendarEvent(id);
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+    } catch (err) {
+      console.error("[App] deleteCalendarEvent failed:", err);
+      showToast("일정 삭제에 실패했어요. 잠시 후 다시 시도해 주세요.");
+    }
   };
 
   const handleLogout = async () => {
