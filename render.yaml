@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: moamoa-backend
+    runtime: java
+    rootDir: backend
+    buildCommand: ./gradlew build
+    startCommand: java -jar build/libs/backend-0.0.1-SNAPSHOT.jar
+    envVars:
+      - key: SUPABASE_DB_URL
+        sync: false
+      - key: SUPABASE_DB_USERNAME
+        sync: false
+      - key: SUPABASE_DB_PASSWORD
+        sync: false
+      - key: SUPABASE_JWKS_URI
+        sync: false
+      - key: SUPABASE_ISSUER_URI
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: AI_SERVER_BASE_URL
+        sync: false
