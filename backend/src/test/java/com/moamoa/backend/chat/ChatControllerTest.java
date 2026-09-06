@@ -54,8 +54,9 @@ class ChatControllerTest {
         UUID userId = UUID.randomUUID();
         ChatSession session = new ChatSession("chat_abc123", userId, null, null);
         when(chatSessionRepository.findById("chat_abc123")).thenReturn(Optional.of(session));
+        when(profileRepository.findById(userId)).thenReturn(Optional.of(new Profile(userId, "E-9", "Nguyen Van A", "안산시")));
         when(aiServerClient.slotExtract(any())).thenReturn(new SlotExtractResponse(
-                "그럼 지금 근무하신 지는 얼마나 되셨어요?", new ExtractedProfile(2500000L, null), false));
+                "그럼 지금 근무하신 지는 얼마나 되셨어요?", new ExtractedProfile(2500000L, null), false, 0));
 
         mockMvc.perform(post("/api/chat/message")
                         .with(jwt().jwt(j -> j.subject(userId.toString())))
@@ -79,8 +80,9 @@ class ChatControllerTest {
         UUID userId = UUID.randomUUID();
         ChatSession session = new ChatSession("chat_abc123", userId, 2500000L, null);
         when(chatSessionRepository.findById("chat_abc123")).thenReturn(Optional.of(session));
+        when(profileRepository.findById(userId)).thenReturn(Optional.of(new Profile(userId, "E-9", "Nguyen Van A", "안산시")));
         when(aiServerClient.slotExtract(any())).thenReturn(new SlotExtractResponse(
-                "죄송해요, 잘 못 알아들었어요. 다시 한 번 말씀해주시겠어요?", null, false));
+                "죄송해요, 잘 못 알아들었어요. 다시 한 번 말씀해주시겠어요?", null, false, 1));
 
         mockMvc.perform(post("/api/chat/message")
                         .with(jwt().jwt(j -> j.subject(userId.toString())))
@@ -103,7 +105,8 @@ class ChatControllerTest {
         UUID userId = UUID.randomUUID();
         ChatSession session = new ChatSession("chat_abc123", userId, null, null);
         when(chatSessionRepository.findById("chat_abc123")).thenReturn(Optional.of(session));
-        when(aiServerClient.slotExtract(any())).thenReturn(new SlotExtractResponse(null, null, false));
+        when(profileRepository.findById(userId)).thenReturn(Optional.of(new Profile(userId, "E-9", "Nguyen Van A", "안산시")));
+        when(aiServerClient.slotExtract(any())).thenReturn(new SlotExtractResponse(null, null, false, 0));
 
         mockMvc.perform(post("/api/chat/message")
                         .with(jwt().jwt(j -> j.subject(userId.toString())))
@@ -123,7 +126,7 @@ class ChatControllerTest {
         when(chatSessionRepository.findById("chat_abc123")).thenReturn(Optional.of(session));
         when(profileRepository.findById(userId)).thenReturn(Optional.of(profile));
         when(aiServerClient.slotExtract(any())).thenReturn(new SlotExtractResponse(
-                "감사해요!", new ExtractedProfile(null, 14), true));
+                "감사해요!", new ExtractedProfile(null, 14), true, 0));
 
         mockMvc.perform(post("/api/chat/message")
                         .with(jwt().jwt(j -> j.subject(userId.toString())))

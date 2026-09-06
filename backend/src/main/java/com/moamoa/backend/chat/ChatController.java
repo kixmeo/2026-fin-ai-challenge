@@ -7,6 +7,7 @@ import com.moamoa.backend.common.ApiResponse;
 import com.moamoa.backend.common.ErrorCode;
 import com.moamoa.backend.common.JwtUsers;
 import com.moamoa.backend.common.ai.AiServerClient;
+import com.moamoa.backend.common.ai.dto.AiUserProfile;
 import com.moamoa.backend.common.ai.dto.ExtractedProfile;
 import com.moamoa.backend.common.ai.dto.SlotExtractRequest;
 import com.moamoa.backend.common.ai.dto.SlotExtractResponse;
@@ -51,8 +52,14 @@ public class ChatController {
                 .filter(s -> s.getUserId().equals(userId))
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다."));
 
-        SlotExtractResponse aiResponse = aiServerClient.slotExtract(
-                new SlotExtractRequest(request.message(), session.getIncome(), session.getWorkPeriod()));
+        // AI 서버는 known_income/known_work_period가 아니라 current_profile(비자종류 포함)을 기대하므로
+        // 매 턴마다 기본 프로필을 같이 조회해야 함 - 이 세션이 존재한다는 건 기본 프로필이 이미 있다는 뜻(F1은
+        // GET /api/benefits에서 기본 프로필 확인 후에만 세션이 생성됨)
+        Profile profile = profileRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorCode.PROFILE_INCOMPLETE, "기본 프로필이 완성되지 않았습니다."));
+
+        AiUserProfile currentProfile = new AiUserProfile(profile.getVisaType(), session.getIncome(), session.getWorkPeriod());
+        SlotExtractResponse aiResponse = aiServerClient.slotExtract(new SlotExtractRequest(request.message(), currentProfile));
         AiServerClient.requireField(aiResponse.reply(), "AI 서버가 유효한 응답을 반환하지 않았습니다.");
 
         ExtractedProfile extracted = aiResponse.extractedProfile();
@@ -61,8 +68,6 @@ public class ChatController {
         }
 
         if (aiResponse.isComplete()) {
-            Profile profile = profileRepository.findById(userId)
-                    .orElseThrow(() -> new ApiException(ErrorCode.PROFILE_INCOMPLETE, "기본 프로필이 완성되지 않았습니다."));
             profile.applyExtractedInfo(session.getIncome(), session.getWorkPeriod());
             profileRepository.save(profile);
             // 완료된 세션은 더 이상 필요 없음 - 지워야 GET /api/benefits의 세션 재사용 로직이 다음번에 새 세션을 만들 수 있음

@@ -84,7 +84,7 @@ class BenefitsControllerTest {
     void returnsNeedsMoreInfoAndCreatesSessionWhenAiSaysInsufficient() throws Exception {
         UUID userId = UUID.randomUUID();
         when(profileRepository.findById(userId)).thenReturn(Optional.of(new Profile(userId, "E-9", "Nguyen Van A", "안산시")));
-        when(aiServerClient.checkInfo(any())).thenReturn(new CheckInfoResponse(false));
+        when(aiServerClient.checkInfo(any())).thenReturn(new CheckInfoResponse(true, List.of("income", "work_period")));
         when(chatSessionRepository.findByUserId(userId)).thenReturn(Optional.empty());
         when(chatSessionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -101,7 +101,7 @@ class BenefitsControllerTest {
     void reusesExistingSessionInsteadOfCreatingANewOne() throws Exception {
         UUID userId = UUID.randomUUID();
         when(profileRepository.findById(userId)).thenReturn(Optional.of(new Profile(userId, "E-9", "Nguyen Van A", "안산시")));
-        when(aiServerClient.checkInfo(any())).thenReturn(new CheckInfoResponse(false));
+        when(aiServerClient.checkInfo(any())).thenReturn(new CheckInfoResponse(true, List.of("income", "work_period")));
         ChatSession existing = new ChatSession("chat_existing", userId, 2500000L, null);
         when(chatSessionRepository.findByUserId(userId)).thenReturn(Optional.of(existing));
 
@@ -116,17 +116,17 @@ class BenefitsControllerTest {
     void returnsSortedEligibleBenefitsWhenAiSaysSufficient() throws Exception {
         UUID userId = UUID.randomUUID();
         when(profileRepository.findById(userId)).thenReturn(Optional.of(profileWithIncomeAndWorkPeriod(userId)));
-        when(aiServerClient.checkInfo(any())).thenReturn(new CheckInfoResponse(true));
+        when(aiServerClient.checkInfo(any())).thenReturn(new CheckInfoResponse(false, List.of()));
 
         BenefitCandidate low = new BenefitCandidate("b_009", "산업재해 소액치료비 지원", 300000,
-                LocalDate.of(2026, 10, 5), 1, "{}");
+                LocalDate.of(2026, 10, 5), 1, "{}", "설명");
         BenefitCandidate high = new BenefitCandidate("b_017", "외국인근로자 귀국비용보험", 500000,
-                LocalDate.of(2026, 9, 30), 2, "{}");
+                LocalDate.of(2026, 9, 30), 2, "{}", "설명");
         when(benefitCandidateRepository.findAll()).thenReturn(List.of(low, high));
 
         when(aiServerClient.score(any())).thenReturn(new BenefitScoreResponse(List.of(
-                new ScoredBenefit("b_009", true, 0.58),
-                new ScoredBenefit("b_017", true, 0.86))));
+                new ScoredBenefit("b_009", true, 0.58, List.of("소득 기준 충족")),
+                new ScoredBenefit("b_017", true, 0.86, List.of("체류자격 충족")))));
 
         mockMvc.perform(get("/api/benefits").with(jwt().jwt(j -> j.subject(userId.toString()))))
                 .andExpect(status().isOk())
@@ -140,13 +140,13 @@ class BenefitsControllerTest {
     void excludesIneligibleBenefits() throws Exception {
         UUID userId = UUID.randomUUID();
         when(profileRepository.findById(userId)).thenReturn(Optional.of(profileWithIncomeAndWorkPeriod(userId)));
-        when(aiServerClient.checkInfo(any())).thenReturn(new CheckInfoResponse(true));
+        when(aiServerClient.checkInfo(any())).thenReturn(new CheckInfoResponse(false, List.of()));
 
         BenefitCandidate candidate = new BenefitCandidate("b_021", "외국인근로자 국민연금 반환일시금", 1200000,
-                LocalDate.of(2026, 11, 15), 3, "{}");
+                LocalDate.of(2026, 11, 15), 3, "{}", "설명");
         when(benefitCandidateRepository.findAll()).thenReturn(List.of(candidate));
         when(aiServerClient.score(any())).thenReturn(new BenefitScoreResponse(List.of(
-                new ScoredBenefit("b_021", false, 0.1))));
+                new ScoredBenefit("b_021", false, 0.1, List.of("근속기간 미달")))));
 
         mockMvc.perform(get("/api/benefits").with(jwt().jwt(j -> j.subject(userId.toString()))))
                 .andExpect(status().isOk())
@@ -157,13 +157,13 @@ class BenefitsControllerTest {
     void returnsAiServerErrorWhenAiReturnsUnknownBenefitId() throws Exception {
         UUID userId = UUID.randomUUID();
         when(profileRepository.findById(userId)).thenReturn(Optional.of(profileWithIncomeAndWorkPeriod(userId)));
-        when(aiServerClient.checkInfo(any())).thenReturn(new CheckInfoResponse(true));
+        when(aiServerClient.checkInfo(any())).thenReturn(new CheckInfoResponse(false, List.of()));
 
         BenefitCandidate candidate = new BenefitCandidate("b_021", "외국인근로자 국민연금 반환일시금", 1200000,
-                LocalDate.of(2026, 11, 15), 3, "{}");
+                LocalDate.of(2026, 11, 15), 3, "{}", "설명");
         when(benefitCandidateRepository.findAll()).thenReturn(List.of(candidate));
         when(aiServerClient.score(any())).thenReturn(new BenefitScoreResponse(List.of(
-                new ScoredBenefit("b_999", true, 0.9))));
+                new ScoredBenefit("b_999", true, 0.9, List.of()))));
 
         mockMvc.perform(get("/api/benefits").with(jwt().jwt(j -> j.subject(userId.toString()))))
                 .andExpect(status().isBadGateway())
@@ -174,7 +174,7 @@ class BenefitsControllerTest {
     void returnsAiServerErrorWhenScoredBenefitsIsMissing() throws Exception {
         UUID userId = UUID.randomUUID();
         when(profileRepository.findById(userId)).thenReturn(Optional.of(profileWithIncomeAndWorkPeriod(userId)));
-        when(aiServerClient.checkInfo(any())).thenReturn(new CheckInfoResponse(true));
+        when(aiServerClient.checkInfo(any())).thenReturn(new CheckInfoResponse(false, List.of()));
         when(benefitCandidateRepository.findAll()).thenReturn(List.of());
         when(aiServerClient.score(any())).thenReturn(new BenefitScoreResponse(null));
 
@@ -185,7 +185,9 @@ class BenefitsControllerTest {
 
     @Test
     void explainReturnsAiAnswerAsIs() throws Exception {
-        when(benefitCandidateRepository.existsById("b_017")).thenReturn(true);
+        BenefitCandidate candidate = new BenefitCandidate("b_017", "외국인근로자 귀국비용보험", 500000,
+                LocalDate.of(2026, 9, 30), 2, "{}", "설명");
+        when(benefitCandidateRepository.findById("b_017")).thenReturn(Optional.of(candidate));
         when(aiServerClient.explain(any())).thenReturn(new ExplainResponse("설명입니다.", List.of("고용노동부 공고 2026-114호")));
 
         mockMvc.perform(post("/api/benefits/b_017/explain")
@@ -201,7 +203,9 @@ class BenefitsControllerTest {
 
     @Test
     void returnsAiServerErrorWhenExplainAnswerIsMissing() throws Exception {
-        when(benefitCandidateRepository.existsById("b_017")).thenReturn(true);
+        BenefitCandidate candidate = new BenefitCandidate("b_017", "외국인근로자 귀국비용보험", 500000,
+                LocalDate.of(2026, 9, 30), 2, "{}", "설명");
+        when(benefitCandidateRepository.findById("b_017")).thenReturn(Optional.of(candidate));
         when(aiServerClient.explain(any())).thenReturn(new ExplainResponse(null, null));
 
         mockMvc.perform(post("/api/benefits/b_017/explain")
@@ -216,7 +220,7 @@ class BenefitsControllerTest {
 
     @Test
     void returnsNotFoundWhenExplainingUnknownBenefit() throws Exception {
-        when(benefitCandidateRepository.existsById("nope")).thenReturn(false);
+        when(benefitCandidateRepository.findById("nope")).thenReturn(Optional.empty());
 
         mockMvc.perform(post("/api/benefits/nope/explain")
                         .with(jwt().jwt(j -> j.subject(UUID.randomUUID().toString())))
@@ -243,7 +247,7 @@ class BenefitsControllerTest {
     @Test
     void addsBenefitDeadlineToCalendar() throws Exception {
         BenefitCandidate candidate = new BenefitCandidate("b_017", "외국인근로자 귀국비용보험", 500000,
-                LocalDate.of(2026, 9, 30), 2, "{}");
+                LocalDate.of(2026, 9, 30), 2, "{}", "설명");
         when(benefitCandidateRepository.findById("b_017")).thenReturn(Optional.of(candidate));
         when(calendarEventRepository.save(any())).thenAnswer(invocation -> {
             CalendarEvent saved = invocation.getArgument(0);
