@@ -7,6 +7,7 @@ import com.moamoa.backend.common.JwtUsers;
 import com.moamoa.backend.common.ai.AiServerClient;
 import com.moamoa.backend.common.ai.dto.ExchangeInsightRequest;
 import com.moamoa.backend.common.ai.dto.ExchangeInsightResponse;
+import com.moamoa.backend.common.ai.dto.RatePoint;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,14 +15,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/exchange-rate")
 public class ExchangeController {
 
-    private final AiServerClient aiServerClient;
+    // 현재 ExchangeRateRefreshJob이 실제 이력을 쌓아둔 통화만 지원 - 그 외는 90일 시계열이 아예 없어서
+    // AI 호출 자체가 무의미함
+    private static final List<String> SUPPORTED_CURRENCIES = List.of("USD", "PHP", "VND", "THB");
+    private static final int HISTORY_DAYS = 90;
 
-    public ExchangeController(AiServerClient aiServerClient) {
+    private final AiServerClient aiServerClient;
+    private final ExchangeRateSnapshotRepository snapshotRepository;
+
+    public ExchangeController(AiServerClient aiServerClient, ExchangeRateSnapshotRepository snapshotRepository) {
         this.aiServerClient = aiServerClient;
+        this.snapshotRepository = snapshotRepository;
     }
 
     @GetMapping("/insight")
@@ -31,11 +42,23 @@ public class ExchangeController {
             @RequestParam(defaultValue = "30") int window
     ) {
         JwtUsers.requireUserId(jwt);
-        if (currency.isBlank()) {
-            throw new ApiException(ErrorCode.VALIDATION_ERROR, "currency는 필수입니다.");
+        String normalized = currency == null ? "" : currency.toUpperCase();
+        if (!SUPPORTED_CURRENCIES.contains(normalized)) {
+            throw new ApiException(ErrorCode.VALIDATION_ERROR, "지원하지 않는 통화입니다: " + currency);
         }
 
-        ExchangeInsightResponse response = aiServerClient.exchangeInsight(new ExchangeInsightRequest(currency, window));
+        List<ExchangeRateSnapshot> snapshots = snapshotRepository
+                .findByCurrencyAndRateDateGreaterThanEqualOrderByRateDateAsc(normalized, LocalDate.now().minusDays(HISTORY_DAYS));
+        if (snapshots.isEmpty()) {
+            throw new ApiException(ErrorCode.EXTERNAL_API_ERROR, "환율 데이터를 아직 확인할 수 없습니다: " + normalized);
+        }
+        ExchangeRateSnapshot latest = snapshots.get(snapshots.size() - 1);
+        List<RatePoint> history = snapshots.stream()
+                .map(s -> new RatePoint(s.getRateDate(), s.getRate().doubleValue()))
+                .toList();
+
+        ExchangeInsightResponse response = aiServerClient.exchangeInsight(
+                new ExchangeInsightRequest(normalized, latest.getRate().doubleValue(), history));
         AiServerClient.requireField(response.currency(), "AI 서버가 유효하지 않은 환율 정보를 반환했습니다.");
         AiServerClient.requireField(response.date(), "AI 서버가 유효하지 않은 환율 정보를 반환했습니다.");
         AiServerClient.requireField(response.volatilityLevel(), "AI 서버가 유효하지 않은 환율 정보를 반환했습니다.");
