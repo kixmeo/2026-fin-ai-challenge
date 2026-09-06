@@ -26,6 +26,13 @@ public class Profile {
     @Column(name = "residence_region", nullable = false, length = 255)
     private String residenceRegion;
 
+    // F1(대화형 정보수집) 완료 시 채워짐 - 가입 직후 기본 프로필 입력 시점엔 비어있음(null)
+    @Column
+    private Long income;
+
+    @Column(name = "work_period")
+    private Integer workPeriod;
+
     protected Profile() {
     }
 
@@ -34,6 +41,16 @@ public class Profile {
         this.visaType = requireNonBlank(visaType, "visaType");
         this.name = requireNonBlank(name, "name");
         this.residenceRegion = requireNonBlank(residenceRegion, "residenceRegion");
+    }
+
+    // F1 채팅에서 매 턴마다 슬롯이 하나씩만 채워질 수 있으므로, 값이 있는 필드만 갱신함
+    public void applyExtractedInfo(Long income, Integer workPeriod) {
+        if (income != null) {
+            this.income = income;
+        }
+        if (workPeriod != null) {
+            this.workPeriod = workPeriod;
+        }
     }
 
     private static String requireNonBlank(String value, String fieldName) {
@@ -57,5 +74,13 @@ public class Profile {
 
     public String getResidenceRegion() {
         return residenceRegion;
+    }
+
+    public Long getIncome() {
+        return income;
+    }
+
+    public Integer getWorkPeriod() {
+        return workPeriod;
     }
 }
