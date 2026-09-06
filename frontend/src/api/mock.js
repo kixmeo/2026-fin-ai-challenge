@@ -122,30 +122,8 @@ export async function getExchangeInsight(currency) {
   return { currency, date: "2026-08-26", ...d, message: messages[d.volatility_level] };
 }
 
-export async function getFees(amount, currency) {
-  await wait(500);
-  const base = amount / 1000000;
-  return {
-    channels: [
-      { name: "하나은행", fee: Math.round(9000 * base), eta_hours: 18 },
-      { name: "신한은행", fee: Math.round(11500 * base), eta_hours: 20 },
-      { name: "우리은행", fee: Math.round(9800 * base), eta_hours: 16 },
-      { name: "KB국민은행", fee: Math.round(13000 * base), eta_hours: 24 },
-    ].sort((a, b) => a.fee - b.fee),
-  };
-}
-
 export async function getCalendar() {
   await wait(200);
   return { events: [] };
 }
 
-export async function postCalendarEvent(title, date) {
-  await wait(300);
-  return { calendar_event_id: "mock_evt_" + Date.now() };
-}
-
-export async function deleteCalendarEvent(id) {
-  await wait(200);
-  return { success: true };
-}

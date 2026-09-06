@@ -99,27 +99,15 @@ export const api = {
     "GET /api/exchange-rate/insight"
   ),
 
-  // GET /api/fees
-  getFees: withFallback(
-    (amount, currency) => request(`/api/fees?amount=${amount}&currency=${currency}`),
-    mock.getFees,
-    "GET /api/fees"
-  ),
+  // GET /api/fees — mock 대체 없음: 실제 돈 관련 수치라 백엔드 에러를 가짜 데이터로 가리면 안 됨
+  getFees: (amount) => request(`/api/fees?amount=${amount}`),
 
   // GET /api/calendar
   getCalendar: withFallback(() => request("/api/calendar"), mock.getCalendar, "GET /api/calendar"),
 
-  // POST /api/calendar
-  postCalendarEvent: withFallback(
-    (title, date) => request("/api/calendar", { method: "POST", body: JSON.stringify({ title, date }) }),
-    mock.postCalendarEvent,
-    "POST /api/calendar"
-  ),
+  // POST /api/calendar — mock 대체 없음: 실패를 성공으로 가리면 일정이 저장 안 된 채 저장됐다고 표시됨
+  postCalendarEvent: (title, date) => request("/api/calendar", { method: "POST", body: JSON.stringify({ title, date }) }),
 
-  // DELETE /api/calendar/{event_id}
-  deleteCalendarEvent: withFallback(
-    (id) => request(`/api/calendar/${id}`, { method: "DELETE" }),
-    mock.deleteCalendarEvent,
-    "DELETE /api/calendar/:id"
-  ),
+  // DELETE /api/calendar/{event_id} — mock 대체 없음: 실패를 성공으로 가리면 실제로는 안 지워졌는데 지워졌다고 표시됨
+  deleteCalendarEvent: (id) => request(`/api/calendar/${id}`, { method: "DELETE" }),
 };
