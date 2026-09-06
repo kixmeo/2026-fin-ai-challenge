@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import java.util.Objects;
 import java.util.UUID;
 
 // 채널(FeeChannel)마다 "미화 환산액이 얼마 이하면 얼마"라는 구간이 여러 개 있음.
@@ -32,7 +33,13 @@ public class FeeTier {
     }
 
     public FeeTier(UUID feeChannelId, Integer maxUsdAmount, long fee) {
-        this.feeChannelId = feeChannelId;
+        this.feeChannelId = Objects.requireNonNull(feeChannelId, "feeChannelId must not be null");
+        if (maxUsdAmount != null && maxUsdAmount < 0) {
+            throw new IllegalArgumentException("maxUsdAmount must not be negative");
+        }
+        if (fee < 0) {
+            throw new IllegalArgumentException("fee must not be negative");
+        }
         this.maxUsdAmount = maxUsdAmount;
         this.fee = fee;
     }

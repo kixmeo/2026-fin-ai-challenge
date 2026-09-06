@@ -3,12 +3,14 @@ package com.moamoa.backend.chat;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 // db/migration-postgresql은 Postgres 전용 문법이라 H2 테스트 DB에서는 제외함
 @DataJpaTest
@@ -31,5 +33,14 @@ class ChatSessionRepositoryTest {
         assertThat(found.get().getUserId()).isEqualTo(userId);
         assertThat(found.get().getIncome()).isEqualTo(2500000L);
         assertThat(found.get().getWorkPeriod()).isNull();
+    }
+
+    @Test
+    void rejectsSecondSessionForSameUser() {
+        UUID userId = UUID.randomUUID();
+        chatSessionRepository.saveAndFlush(new ChatSession("chat_first", userId, null, null));
+
+        assertThatThrownBy(() -> chatSessionRepository.saveAndFlush(new ChatSession("chat_second", userId, null, null)))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

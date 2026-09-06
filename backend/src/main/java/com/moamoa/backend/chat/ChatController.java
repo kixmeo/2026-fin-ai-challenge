@@ -71,6 +71,9 @@ public class ChatController {
             chatSessionRepository.save(session);
         }
 
-        return ApiResponse.success(new ChatMessageResponse(aiResponse.reply(), extracted, aiResponse.isComplete()));
+        // extracted(이번 턴 delta)가 아니라 세션 누적값을 돌려줌 - 그래야 프론트가 "지금까지 모은 값"을
+        // 표시할 때 이번 턴에 새로 추출된 게 없어도 이전 턴 값이 사라져 보이지 않음
+        ExtractedProfile accumulated = new ExtractedProfile(session.getIncome(), session.getWorkPeriod());
+        return ApiResponse.success(new ChatMessageResponse(aiResponse.reply(), accumulated, aiResponse.isComplete()));
     }
 }

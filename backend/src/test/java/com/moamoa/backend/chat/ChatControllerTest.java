@@ -89,7 +89,9 @@ class ChatControllerTest {
                                 {"session_id":"chat_abc123","message":"음..."}
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.is_complete").value(false));
+                .andExpect(jsonPath("$.data.is_complete").value(false))
+                // 이번 턴엔 아무것도 못 뽑았어도, 세션에 누적된 이전 턴 값(income)은 응답에 그대로 남아있어야 함
+                .andExpect(jsonPath("$.data.extracted_profile.income").value(2500000));
 
         assertThat(session.getIncome()).isEqualTo(2500000L);
         assertThat(session.getWorkPeriod()).isNull();

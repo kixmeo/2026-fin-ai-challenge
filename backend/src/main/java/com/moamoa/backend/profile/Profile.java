@@ -43,6 +43,14 @@ public class Profile {
         this.residenceRegion = requireNonBlank(residenceRegion, "residenceRegion");
     }
 
+    // 기본 프로필 재제출(예: 이름/지역만 수정) 시 이 메서드로 기존 엔티티를 갱신해야 함 -
+    // 새 Profile을 만들어 save()하면 JPA가 merge()로 income/workPeriod까지 null로 덮어씀(id가 미리 정해져 있어서)
+    public void updateBasicInfo(String visaType, String name, String residenceRegion) {
+        this.visaType = requireNonBlank(visaType, "visaType");
+        this.name = requireNonBlank(name, "name");
+        this.residenceRegion = requireNonBlank(residenceRegion, "residenceRegion");
+    }
+
     // F1 채팅에서 매 턴마다 슬롯이 하나씩만 채워질 수 있으므로, 값이 있는 필드만 갱신함
     public void applyExtractedInfo(Long income, Integer workPeriod) {
         if (income != null) {

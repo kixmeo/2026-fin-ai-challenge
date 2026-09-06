@@ -30,7 +30,13 @@ public class ProfileController {
             @Valid @RequestBody BasicProfileRequest request
     ) {
         UUID userId = JwtUsers.requireUserId(jwt);
-        Profile profile = new Profile(userId, request.visaType(), request.name(), request.residenceRegion());
+        // 기존 프로필이 있으면 그 위에 갱신 - 새로 만들어 save()하면 merge()가 income/workPeriod까지 null로 덮어씀
+        Profile profile = profileRepository.findById(userId)
+                .map(existing -> {
+                    existing.updateBasicInfo(request.visaType(), request.name(), request.residenceRegion());
+                    return existing;
+                })
+                .orElseGet(() -> new Profile(userId, request.visaType(), request.name(), request.residenceRegion()));
         profileRepository.save(profile);
         return ApiResponse.success(new BasicProfileResponse(true));
     }

@@ -35,10 +35,23 @@ public class FeeChannel {
     }
 
     public FeeChannel(String bankName, String channelType, long wireFee, int etaHours) {
-        this.bankName = bankName;
-        this.channelType = channelType;
+        this.bankName = requireNonBlank(bankName, "bankName");
+        this.channelType = requireNonBlank(channelType, "channelType");
+        if (wireFee < 0) {
+            throw new IllegalArgumentException("wireFee must not be negative");
+        }
+        if (etaHours < 0) {
+            throw new IllegalArgumentException("etaHours must not be negative");
+        }
         this.wireFee = wireFee;
         this.etaHours = etaHours;
+    }
+
+    private static String requireNonBlank(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+        return value;
     }
 
     public UUID getId() {

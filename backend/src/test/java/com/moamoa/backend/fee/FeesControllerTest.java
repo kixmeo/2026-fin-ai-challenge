@@ -83,6 +83,31 @@ class FeesControllerTest {
     }
 
     @Test
+    void sortsMultipleChannelsByFeeNotByAlphabeticalBankNameOrder() throws Exception {
+        // 알파벳 순서로는 가나은행이 먼저지만, 수수료는 다라은행이 더 저렴함 -
+        // 응답이 알파벳 순서(가나,다라)가 아니라 수수료 순서(다라,가나)로 나와야 정렬 로직이 실제로 검증됨
+        FeeChannel ganaBank = new FeeChannel("가나은행", "인터넷", 0, 2);
+        FeeChannel daraBank = new FeeChannel("다라은행", "인터넷", 0, 2);
+        UUID ganaBankId = UUID.randomUUID();
+        UUID daraBankId = UUID.randomUUID();
+        ReflectionTestUtils.setField(ganaBank, "id", ganaBankId);
+        ReflectionTestUtils.setField(daraBank, "id", daraBankId);
+
+        when(feeChannelRepository.findAllByOrderByBankNameAsc()).thenReturn(List.of(ganaBank, daraBank));
+        when(feeTierRepository.findByFeeChannelIdInOrderByMaxUsdAmountAscNullsLast(List.of(ganaBankId, daraBankId)))
+                .thenReturn(List.of(
+                        new FeeTier(ganaBankId, null, 20000),
+                        new FeeTier(daraBankId, null, 5000)));
+
+        mockMvc.perform(get("/api/fees?amount=1000000").with(jwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.channels[0].name").value("다라은행 인터넷"))
+                .andExpect(jsonPath("$.data.channels[0].fee").value(5000))
+                .andExpect(jsonPath("$.data.channels[1].name").value("가나은행 인터넷"))
+                .andExpect(jsonPath("$.data.channels[1].fee").value(20000));
+    }
+
+    @Test
     void rejectsNonPositiveAmount() throws Exception {
         mockMvc.perform(get("/api/fees?amount=0").with(jwt()))
                 .andExpect(status().isBadRequest())

@@ -36,6 +36,10 @@ public class ExchangeController {
         }
 
         ExchangeInsightResponse response = aiServerClient.exchangeInsight(new ExchangeInsightRequest(currency, window));
+        AiServerClient.requireField(response.currency(), "AI 서버가 유효하지 않은 환율 정보를 반환했습니다.");
+        AiServerClient.requireField(response.date(), "AI 서버가 유효하지 않은 환율 정보를 반환했습니다.");
+        AiServerClient.requireField(response.volatilityLevel(), "AI 서버가 유효하지 않은 환율 정보를 반환했습니다.");
+        AiServerClient.requireField(response.message(), "AI 서버가 유효하지 않은 환율 정보를 반환했습니다.");
         return ApiResponse.success(response);
     }
 }

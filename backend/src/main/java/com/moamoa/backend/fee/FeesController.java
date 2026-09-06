@@ -21,7 +21,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/fees")
 public class FeesController {
 
-    // 실시간 환율(F5)은 아직 안 붙어있어서, 수수료 구간(미화 환산액 기준) 판단에만 쓰는 고정 환율 추정치
+    // F5(환율 인사이트)는 별도로 붙어있지만, 여기서는 수수료 구간(미화 환산액 기준) 판단에만 쓰는
+    // 의도적으로 고정된 추정치임 - 실시간 환율을 쓰면 같은 금액이 날마다 다른 구간으로 튈 수 있어서 안 씀
     private static final double USD_TO_KRW_RATE = 1400.0;
 
     private final FeeChannelRepository feeChannelRepository;

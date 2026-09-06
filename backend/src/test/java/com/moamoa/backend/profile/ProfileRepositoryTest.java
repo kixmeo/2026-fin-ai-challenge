@@ -44,4 +44,21 @@ class ProfileRepositoryTest {
         assertThat(updated.getName()).isEqualTo("Nguyen Van B");
         assertThat(updated.getResidenceRegion()).isEqualTo("화성시");
     }
+
+    @Test
+    void updatingBasicInfoInPlacePreservesIncomeAndWorkPeriod() {
+        UUID userId = UUID.randomUUID();
+        Profile profile = new Profile(userId, "E-9", "Nguyen Van A", "안산시");
+        profile.applyExtractedInfo(3000000L, 14);
+        profileRepository.save(profile);
+
+        Profile loaded = profileRepository.findById(userId).orElseThrow();
+        loaded.updateBasicInfo("H-2", "Nguyen Van B", "화성시");
+        profileRepository.save(loaded);
+
+        Profile updated = profileRepository.findById(userId).orElseThrow();
+        assertThat(updated.getName()).isEqualTo("Nguyen Van B");
+        assertThat(updated.getIncome()).isEqualTo(3000000L);
+        assertThat(updated.getWorkPeriod()).isEqualTo(14);
+    }
 }

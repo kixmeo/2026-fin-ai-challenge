@@ -53,6 +53,17 @@ class ExchangeControllerTest {
     }
 
     @Test
+    void returnsAiServerErrorWhenVolatilityLevelIsMissing() throws Exception {
+        when(aiServerClient.exchangeInsight(eq(new ExchangeInsightRequest("USD", 30)))).thenReturn(new ExchangeInsightResponse(
+                "USD", LocalDate.of(2026, 8, 18), 1385.2, 82, 74, null, 1.8, "최근 30일 중 상위 18%..."));
+
+        mockMvc.perform(get("/api/exchange-rate/insight?currency=USD&window=30")
+                        .with(jwt().jwt(j -> j.subject(UUID.randomUUID().toString()))))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.error.code").value("AI_SERVER_ERROR"));
+    }
+
+    @Test
     void rejectsBlankCurrency() throws Exception {
         mockMvc.perform(get("/api/exchange-rate/insight?currency=")
                         .with(jwt().jwt(j -> j.subject(UUID.randomUUID().toString()))))

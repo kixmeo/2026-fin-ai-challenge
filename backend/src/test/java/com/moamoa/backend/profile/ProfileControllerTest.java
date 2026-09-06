@@ -12,6 +12,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.mockito.ArgumentCaptor;
@@ -62,6 +63,30 @@ class ProfileControllerTest {
         assertThat(saved.getVisaType()).isEqualTo("E-9");
         assertThat(saved.getName()).isEqualTo("Nguyen Van A");
         assertThat(saved.getResidenceRegion()).isEqualTo("안산시");
+    }
+
+    @Test
+    void resubmittingBasicProfileDoesNotWipeIncomeAndWorkPeriod() throws Exception {
+        UUID userId = UUID.randomUUID();
+        Profile existing = new Profile(userId, "E-9", "Nguyen Van A", "안산시");
+        existing.applyExtractedInfo(3000000L, 14);
+        when(profileRepository.findById(userId)).thenReturn(Optional.of(existing));
+        when(profileRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(post("/api/profile/basic")
+                        .with(jwt().jwt(j -> j.subject(userId.toString())))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"visa_type":"H-2","name":"Nguyen Van B","residence_region":"화성시"}
+                                """))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Profile> captor = ArgumentCaptor.forClass(Profile.class);
+        verify(profileRepository).save(captor.capture());
+        Profile saved = captor.getValue();
+        assertThat(saved.getName()).isEqualTo("Nguyen Van B");
+        assertThat(saved.getIncome()).isEqualTo(3000000L);
+        assertThat(saved.getWorkPeriod()).isEqualTo(14);
     }
 
     @Test
