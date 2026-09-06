@@ -20,6 +20,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
@@ -49,6 +50,11 @@ class AiServerClientTest {
     void deserializesSnakeCaseResponseFields() {
         server.expect(requestTo(BASE_URL + "/ai/exchange/insight"))
                 .andExpect(method(HttpMethod.POST))
+                // rateHistory90d의 기본 SNAKE_CASE 변환 결과는 "rate_history90d"라 AI 서버가 필수 필드
+                // 누락으로 422를 내는 회귀가 있었음(@JsonProperty로 고침) - 실제로 보내는 바디를 고정해서 확인
+                .andExpect(content().json("""
+                        {"currency":"USD","current_rate":1385.2,"rate_history_90d":[{"date":"2026-08-18","rate":1385.2}]}
+                        """))
                 .andRespond(withSuccess("""
                         {
                           "currency":"USD",
