@@ -4,6 +4,7 @@ import com.moamoa.backend.common.ApiException;
 import com.moamoa.backend.common.ErrorCode;
 import com.moamoa.backend.common.ai.dto.ExchangeInsightRequest;
 import com.moamoa.backend.common.ai.dto.ExchangeInsightResponse;
+import com.moamoa.backend.common.ai.dto.RatePoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -13,6 +14,9 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.json.JsonMapper;
+
+import java.time.LocalDate;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -58,7 +62,7 @@ class AiServerClientTest {
                         }
                         """, MediaType.APPLICATION_JSON));
 
-        ExchangeInsightResponse response = client.exchangeInsight(new ExchangeInsightRequest("USD", 30));
+        ExchangeInsightResponse response = client.exchangeInsight(new ExchangeInsightRequest("USD", 1385.2, List.of(new RatePoint(LocalDate.of(2026, 8, 18), 1385.2))));
 
         assertThat(response.currentRate()).isEqualTo(1385.2);
         assertThat(response.percentile30d()).isEqualTo(82);
@@ -71,7 +75,7 @@ class AiServerClientTest {
         server.expect(requestTo(BASE_URL + "/ai/exchange/insight"))
                 .andRespond(withServerError());
 
-        assertThatThrownBy(() -> client.exchangeInsight(new ExchangeInsightRequest("USD", 30)))
+        assertThatThrownBy(() -> client.exchangeInsight(new ExchangeInsightRequest("USD", 1385.2, List.of(new RatePoint(LocalDate.of(2026, 8, 18), 1385.2)))))
                 .isInstanceOf(ApiException.class)
                 .extracting(e -> ((ApiException) e).getErrorCode())
                 .isEqualTo(ErrorCode.AI_SERVER_ERROR);
@@ -82,7 +86,7 @@ class AiServerClientTest {
         server.expect(requestTo(BASE_URL + "/ai/exchange/insight"))
                 .andRespond(withSuccess());
 
-        assertThatThrownBy(() -> client.exchangeInsight(new ExchangeInsightRequest("USD", 30)))
+        assertThatThrownBy(() -> client.exchangeInsight(new ExchangeInsightRequest("USD", 1385.2, List.of(new RatePoint(LocalDate.of(2026, 8, 18), 1385.2)))))
                 .isInstanceOf(ApiException.class)
                 .extracting(e -> ((ApiException) e).getErrorCode())
                 .isEqualTo(ErrorCode.AI_SERVER_ERROR);
