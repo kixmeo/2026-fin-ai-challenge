@@ -2,9 +2,9 @@ package com.moamoa.backend.common.ai;
 
 import com.moamoa.backend.common.ApiException;
 import com.moamoa.backend.common.ErrorCode;
-import com.moamoa.backend.common.ai.dto.AiUserProfile;
 import com.moamoa.backend.common.ai.dto.BenefitScoreRequest;
 import com.moamoa.backend.common.ai.dto.BenefitScoreResponse;
+import com.moamoa.backend.common.ai.dto.CheckInfoRequest;
 import com.moamoa.backend.common.ai.dto.CheckInfoResponse;
 import com.moamoa.backend.common.ai.dto.ExchangeInsightRequest;
 import com.moamoa.backend.common.ai.dto.ExchangeInsightResponse;
@@ -32,7 +32,7 @@ public class AiServerClient {
         this.restClient = aiServerRestClient;
     }
 
-    public CheckInfoResponse checkInfo(AiUserProfile request) {
+    public CheckInfoResponse checkInfo(CheckInfoRequest request) {
         return post("/ai/benefits/check-info", request, CheckInfoResponse.class);
     }
 

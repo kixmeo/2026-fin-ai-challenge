@@ -17,6 +17,7 @@ import com.moamoa.backend.common.ai.dto.AiBenefitCandidate;
 import com.moamoa.backend.common.ai.dto.AiUserProfile;
 import com.moamoa.backend.common.ai.dto.BenefitScoreRequest;
 import com.moamoa.backend.common.ai.dto.BenefitScoreResponse;
+import com.moamoa.backend.common.ai.dto.CheckInfoRequest;
 import com.moamoa.backend.common.ai.dto.CheckInfoResponse;
 import com.moamoa.backend.common.ai.dto.ExplainRequest;
 import com.moamoa.backend.common.ai.dto.ExplainResponse;
@@ -70,8 +71,8 @@ public class BenefitsController {
         Profile profile = profileRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.PROFILE_INCOMPLETE, "기본 프로필이 완성되지 않았습니다."));
 
-        CheckInfoResponse checkInfo = aiServerClient.checkInfo(
-                new AiUserProfile(profile.getVisaType(), profile.getIncome(), profile.getWorkPeriod()));
+        CheckInfoResponse checkInfo = aiServerClient.checkInfo(new CheckInfoRequest(
+                new AiUserProfile(profile.getVisaType(), profile.getIncome(), profile.getWorkPeriod())));
 
         if (checkInfo.needsMoreInfo()) {
             // 진행 중인 세션이 이미 있으면 재사용 - 매번 새로 만들면 GET /api/benefits를 반복 호출할 때마다 고아 행이 쌓임
