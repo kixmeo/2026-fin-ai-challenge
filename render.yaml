@@ -1,10 +1,10 @@
 services:
   - type: web
     name: moamoa-backend
-    runtime: java
+    runtime: docker
     rootDir: backend
-    buildCommand: ./gradlew build
-    startCommand: java -jar build/libs/backend-0.0.1-SNAPSHOT.jar
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
     envVars:
       - key: SUPABASE_DB_URL
         sync: false
