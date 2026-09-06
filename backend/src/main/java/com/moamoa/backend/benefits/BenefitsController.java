@@ -21,6 +21,7 @@ import com.moamoa.backend.common.ai.dto.CheckInfoResponse;
 import com.moamoa.backend.common.ai.dto.ExplainRequest;
 import com.moamoa.backend.common.ai.dto.ExplainResponse;
 import com.moamoa.backend.common.ai.dto.ScoredBenefit;
+import com.moamoa.backend.common.ai.dto.SourceDocument;
 import com.moamoa.backend.profile.Profile;
 import com.moamoa.backend.profile.ProfileRepository;
 import jakarta.validation.Valid;
@@ -72,7 +73,7 @@ public class BenefitsController {
         CheckInfoResponse checkInfo = aiServerClient.checkInfo(
                 new AiUserProfile(profile.getVisaType(), profile.getIncome(), profile.getWorkPeriod()));
 
-        if (!checkInfo.sufficient()) {
+        if (checkInfo.needsMoreInfo()) {
             // 진행 중인 세션이 이미 있으면 재사용 - 매번 새로 만들면 GET /api/benefits를 반복 호출할 때마다 고아 행이 쌓임
             ChatSession session = chatSessionRepository.findByUserId(userId)
                     .orElseGet(() -> chatSessionRepository.save(new ChatSession(
@@ -105,10 +106,10 @@ public class BenefitsController {
             @Valid @RequestBody BenefitExplainRequest request
     ) {
         JwtUsers.requireUserId(jwt);
-        if (!benefitCandidateRepository.existsById(benefitId)) {
-            throw new ApiException(ErrorCode.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다.");
-        }
-        ExplainResponse response = aiServerClient.explain(new ExplainRequest(benefitId, request.question()));
+        BenefitCandidate candidate = benefitCandidateRepository.findById(benefitId)
+                .orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다."));
+        ExplainResponse response = aiServerClient.explain(new ExplainRequest(
+                candidate.getTitle(), request.question(), List.of(toSourceDocument(candidate))));
         AiServerClient.requireField(response.answer(), "AI 서버가 유효하지 않은 설명 응답을 반환했습니다.");
         AiServerClient.requireField(response.sources(), "AI 서버가 유효하지 않은 설명 응답을 반환했습니다.");
         return ApiResponse.success(response);
@@ -130,7 +131,11 @@ public class BenefitsController {
 
     private AiBenefitCandidate toAiCandidate(BenefitCandidate c) {
         return new AiBenefitCandidate(
-                c.getBenefitId(), c.getAmount(), c.getDeadline(), c.getRequiredDocsCount(), c.getEligibilityRule());
+                c.getBenefitId(), c.getTitle(), c.getAmount(), c.getDeadline(), c.getRequiredDocsCount(), c.getEligibilityRule());
+    }
+
+    private SourceDocument toSourceDocument(BenefitCandidate c) {
+        return new SourceDocument(c.getBenefitId(), c.getTitle(), c.getDescription());
     }
 
     private BenefitResponse toBenefitResponse(ScoredBenefit scored, Map<String, BenefitCandidate> candidatesById) {

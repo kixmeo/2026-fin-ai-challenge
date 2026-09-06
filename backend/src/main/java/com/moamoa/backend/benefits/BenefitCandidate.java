@@ -32,17 +32,23 @@ public class BenefitCandidate {
     @Column(name = "eligibility_rule", nullable = false, length = 2000)
     private String eligibilityRule;
 
+    // F3(설명/재질문)에서 AI 서버에 RAG 소스로 그대로 실어보내는 본문 - 아직 실제 공고 원문이 아니라
+    // 자리표시 텍스트가 들어있음(V14 마이그레이션 참고). 콘텐츠 담당자가 실제 문서로 교체해야 함
+    @Column(length = 2000)
+    private String description;
+
     protected BenefitCandidate() {
     }
 
     public BenefitCandidate(String benefitId, String title, long amount, LocalDate deadline,
-                             int requiredDocsCount, String eligibilityRule) {
+                             int requiredDocsCount, String eligibilityRule, String description) {
         this.benefitId = requireNonBlank(benefitId, "benefitId");
         this.title = requireNonBlank(title, "title");
         this.amount = amount;
         this.deadline = Objects.requireNonNull(deadline, "deadline must not be null");
         this.requiredDocsCount = requiredDocsCount;
         this.eligibilityRule = requireNonBlank(eligibilityRule, "eligibilityRule");
+        this.description = description;
     }
 
     private static String requireNonBlank(String value, String fieldName) {
@@ -74,5 +80,9 @@ public class BenefitCandidate {
 
     public String getEligibilityRule() {
         return eligibilityRule;
+    }
+
+    public String getDescription() {
+        return description;
     }
 }
