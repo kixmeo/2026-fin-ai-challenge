@@ -26,7 +26,16 @@ function WagePage() {
   const setDeduction = (i, key, val) => { const next = [...form.deductions]; next[i] = { ...next[i], [key]: val }; setForm({ ...form, deductions: next }); };
   const addDeduction = () => setForm({ ...form, deductions: [...form.deductions, { name: "", amount: "" }] });
   const removeDeduction = (i) => setForm({ ...form, deductions: form.deductions.filter((_, idx) => idx !== i) });
-  const submit = async () => { setLoading(true); const res = await mockApi.postWageCheck(form); setResult(res); setResultKey((k) => k + 1); setLoading(false); };
+  const submit = async () => {
+    setLoading(true);
+    try {
+      const res = await api.postWageCheck(form);
+      setResult(res);
+      setResultKey((k) => k + 1);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="grid-wage">
