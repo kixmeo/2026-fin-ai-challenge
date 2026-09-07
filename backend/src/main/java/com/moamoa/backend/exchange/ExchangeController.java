@@ -57,12 +57,17 @@ public class ExchangeController {
                 .map(s -> new RatePoint(s.getRateDate(), s.getRate().doubleValue()))
                 .toList();
 
-        ExchangeInsightResponse response = aiServerClient.exchangeInsight(
+        ExchangeInsightResponse aiResponse = aiServerClient.exchangeInsight(
                 new ExchangeInsightRequest(normalized, latest.getRate().doubleValue(), history));
-        AiServerClient.requireField(response.currency(), "AI 서버가 유효하지 않은 환율 정보를 반환했습니다.");
-        AiServerClient.requireField(response.date(), "AI 서버가 유효하지 않은 환율 정보를 반환했습니다.");
-        AiServerClient.requireField(response.volatilityLevel(), "AI 서버가 유효하지 않은 환율 정보를 반환했습니다.");
-        AiServerClient.requireField(response.message(), "AI 서버가 유효하지 않은 환율 정보를 반환했습니다.");
+        AiServerClient.requireField(aiResponse.volatilityLevel(), "AI 서버가 유효하지 않은 환율 정보를 반환했습니다.");
+        AiServerClient.requireField(aiResponse.message(), "AI 서버가 유효하지 않은 환율 정보를 반환했습니다.");
+
+        // AI 서버 응답엔 currency/date가 없음(실제 응답 확인 결과 - API 명세서 예시와 달리 그 두 필드는
+        // 안 돌려줌) - 우리가 이미 확실히 알고 있는 값(요청한 통화, 최신 스냅샷 날짜)으로 채워서 응답함
+        ExchangeInsightResponse response = new ExchangeInsightResponse(
+                normalized, latest.getRateDate(), latest.getRate().doubleValue(),
+                aiResponse.percentile30d(), aiResponse.percentile90d(),
+                aiResponse.volatilityLevel(), aiResponse.volatilityScore(), aiResponse.message());
         return ApiResponse.success(response);
     }
 }
